@@ -6,4 +6,18 @@ function makeFoldersArray() {
   ];
 }
 
-module.exports = { makeFoldersArray };
+function makeMaliciousFolder() {
+  const maliciousFolder = {
+    id: 911,
+    folder_name: "bad <script>alert('xss');</script>"
+  };
+  const expectedFolder = {
+    ...maliciousFolder,
+    folder_name: "bad &lt;script&gt;alert('xss');&lt;/script&gt;"
+  };
+  return {
+    maliciousFolder,
+    expectedFolder
+  };
+}
+module.exports = { makeFoldersArray, makeMaliciousFolder };
