@@ -8,7 +8,7 @@ const {
   makeNotesArray,
   makeMaliciousNote
 } = require("./noteful.fixtures");
-const { TEST_DB_URL } = require("../src/config");
+const { TEST_DATABASE_URL } = require("../src/config");
 
 describe("Notes Endpoints", function() {
   let db;
@@ -19,7 +19,7 @@ describe("Notes Endpoints", function() {
   before("make knex instance", () => {
     db = knex({
       client: "pg",
-      connection: TEST_DB_URL
+      connection: TEST_DATABASE_URL
     });
     app.set("db", db);
   });
