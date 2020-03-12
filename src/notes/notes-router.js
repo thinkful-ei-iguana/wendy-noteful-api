@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const xss = require("xss");
 
@@ -7,10 +8,10 @@ const notesRouter = express.Router();
 const jsonParser = express.json();
 
 const serializeNote = note => ({
-  id: note.id,
-  note_name: xss(note.note_name),
-  date_modified: note.date_modified,
-  folder_id: note.folder_id,
+  id: Number(note.id),
+  name: xss(note.name),
+  modified: new Date().toLocaleString("en", { timeZone: "UTC" }),
+  folderid: Number(note.folderid),
   content: xss(note.content)
 });
 
@@ -25,19 +26,22 @@ notesRouter
       .catch(next);
   })
   .post(jsonParser, (req, res, next) => {
-    const { note_name, folder_id, content } = req.body;
-    const newNote = { note_name, folder_id, content };
+    const { name, modified, folderid, content } = req.body;
+    const newNote = { name, folderid, content };
 
     for (const [key, value] of Object.entries(newNote))
       if (!value)
         return res.status(400).json({
           error: { message: `Missing '${key}' in request body.` }
         });
+
+    newNote.modified = modified;
+
     NotesService.insertNote(req.app.get("db"), newNote)
       .then(note => {
         res
           .status(201)
-          .location(`/notes/${note.id}`)
+          .location(path.posix.join(req.originalUrl, `/${note.id}`))
           .json(serializeNote(note));
       })
       .catch(next);
@@ -69,14 +73,15 @@ notesRouter
       .catch(next);
   })
   .patch(jsonParser, (req, res, next) => {
-    const { note_name, folder_id, content } = req.body;
-    const newNoteFields = { note_name, folder_id, content };
+    const { name, folderid, content } = req.body;
+    const newNoteFields = { id: req.params.note_id, name, folderid, content };
 
     const numberOfValues = Object.values(newNoteFields).filter(Boolean).length;
     if (numberOfValues === 0)
       return res.status(400).json({
         error: {
-          message: "Request body must contain note_name, folder_id or content"
+          message:
+            "Request body must contain either 'name', 'folderid' or 'content'"
         }
       });
     NotesService.updateNote(
@@ -85,7 +90,7 @@ notesRouter
       newNoteFields
     )
       .then(numRowsAffected => {
-        res.status(204).end();
+        res.status(201).json(serializeNote(newNoteFields));
       })
       .catch(next);
   });

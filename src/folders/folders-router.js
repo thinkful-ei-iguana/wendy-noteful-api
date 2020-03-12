@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const xss = require("xss");
 const FoldersService = require("./folders-service");
@@ -7,7 +8,7 @@ const jsonParser = express.json();
 
 const serializeFolder = folder => ({
   id: folder.id,
-  folder_name: xss(folder.folder_name)
+  name: xss(folder.name)
 });
 
 foldersRouter
@@ -21,8 +22,8 @@ foldersRouter
       .catch(next);
   })
   .post(jsonParser, (req, res, next) => {
-    const { folder_name } = req.body;
-    const newFolder = { folder_name };
+    const { name } = req.body;
+    const newFolder = { name };
     for (const [key, value] of Object.entries(newFolder)) {
       if (!value) {
         return res.status(400).json({
@@ -34,7 +35,7 @@ foldersRouter
       .then(folder => {
         res
           .status(201)
-          .location(`folders/${folder.id}`)
+          .location(path.posix.join(req.originalUrl, `/${folder.id}`))
           .json(serializeFolder(folder));
       })
       .catch(next);
@@ -56,6 +57,7 @@ foldersRouter
       .catch(next);
   })
   .get((req, res, next) => {
+    console.log("res.folder", res.folder);
     res.json(serializeFolder(res.folder));
   })
   .delete((req, res, next) => {
@@ -66,14 +68,14 @@ foldersRouter
       .catch(next);
   })
   .patch(jsonParser, (req, res, next) => {
-    const { folder_name } = req.body;
-    const folderToUpdate = { folder_name };
+    const { name } = req.body;
+    const folderToUpdate = { id: req.params.folder_id, name };
 
     const numberOfValues = Object.values(folderToUpdate).filter(Boolean).length;
     if (numberOfValues === 0)
       return res.status(400).json({
         error: {
-          message: "Request body must contain 'folder_name'"
+          message: "Request body must contain 'name'"
         }
       });
 
@@ -83,7 +85,10 @@ foldersRouter
       folderToUpdate
     )
       .then(numRowsAffected => {
-        res.status(204).end();
+        res
+          .status(201)
+          .location(path.posix.join(req.originalUrl, `/${folderToUpdate.id}`))
+          .json(serializeFolder(folderToUpdate));
       })
       .catch(next);
   });

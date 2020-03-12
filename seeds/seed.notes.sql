@@ -1,5 +1,5 @@
 INSERT INTO notes
-  (note_name, folder_id, content)
+  (name, folderid, content)
 VALUES
   ('Animals are the best', 1, 'because they are'),
   ('Banjo Music is the worst', 2, 'don''t get me started'),
